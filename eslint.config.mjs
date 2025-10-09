@@ -48,12 +48,8 @@ export default [
       'simple-import-sort/exports': 'warn',
 
       /* --- ✅ Prettier --- */
-      'prettier/prettier': [
-        'warn',
-        {
-          endOfLine: 'auto',
-        },
-      ],
+      // включаем Prettier, конфиг берётся из .prettierrc автоматически
+      'prettier/prettier': 'warn',
     },
   },
 ];
