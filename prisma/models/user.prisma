@@ -3,5 +3,6 @@ model User {
     name     String
     email    String @unique
     password String
-    bio      String
+
+    refreshToken String?
 }
