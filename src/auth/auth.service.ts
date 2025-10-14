@@ -1,4 +1,5 @@
 import { UserService } from '@app/user/user.service';
+import { hashData } from '@app/utils/hashData';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -20,7 +21,7 @@ export class AuthService {
       throw new HttpException('User already exists', HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
-    const hashedPassword = await this.hashData(registerDto.password);
+    const hashedPassword = await hashData(registerDto.password);
 
     const newUser = await this.userService.create({
       ...registerDto,
@@ -60,10 +61,6 @@ export class AuthService {
 
   async logout(userId: number) {
     return this.userService.update(userId, { refreshToken: null });
-  }
-
-  async hashData(data: string) {
-    return await bcrypt.hash(data, 10);
   }
 
   async getTokens(userId: number, email: string) {
@@ -112,7 +109,7 @@ export class AuthService {
   }
 
   async updateRefreshToken(userId: number, refreshToken: string) {
-    const hashedRefreshToken = await this.hashData(refreshToken);
+    const hashedRefreshToken = await hashData(refreshToken);
     await this.userService.update(userId, { refreshToken: hashedRefreshToken });
   }
 }
