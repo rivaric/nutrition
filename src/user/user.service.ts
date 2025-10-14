@@ -1,5 +1,6 @@
 import { DatabaseService } from '@app/database/database.service';
-import { Injectable } from '@nestjs/common';
+import { hashData } from '@app/utils/hashData';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, User } from 'generated/prisma';
 
 @Injectable()
@@ -13,15 +14,27 @@ export class UserService {
   }
 
   async findByEmail(email: string) {
-    return await this.databaseService.user.findUnique({
+    const user = await this.databaseService.user.findUnique({
       where: { email },
     });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    return user;
   }
 
   async findById(id: number) {
-    return await this.databaseService.user.findUnique({
+    const user = await this.databaseService.user.findUnique({
       where: { id },
     });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    return user;
   }
 
   async create(user: Prisma.UserCreateInput) {
@@ -31,9 +44,19 @@ export class UserService {
   }
 
   async update(userId: number, user: Prisma.UserUpdateInput) {
+    if (user.password) {
+      user.password = await hashData(user.password as string);
+    }
+
     return await this.databaseService.user.update({
       where: { id: userId },
       data: user,
+    });
+  }
+
+  async delete(id: number) {
+    return await this.databaseService.user.delete({
+      where: { id },
     });
   }
 
