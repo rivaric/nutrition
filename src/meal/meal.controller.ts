@@ -1,6 +1,16 @@
 import { AccessTokenGuard } from '@app/auth/guards/accessToken.guard';
 import { User } from '@app/user/decorators/user.decorator';
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -11,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 
 import { CreateMealDto } from './dto/createMeal.dto';
+import { MealStatisticsQueryDto } from './dto/mealStatisticsQuery.dto';
 import { UpdateMealDto } from './dto/updateMeal.dto';
 import { MealOwnershipGuard } from './guards/meal-ownership.guard';
 import { MealService } from './meal.service';
@@ -203,6 +214,20 @@ export class MealController {
 
     return {
       meal: responseMeal,
+    };
+  }
+
+  @Get('me/statistics')
+  @UseGuards(AccessTokenGuard)
+  @ApiOperation({
+    summary: 'Get meal statistics',
+    description: 'Retrieves nutritional statistics for meals within a specified date range',
+  })
+  async getStatistics(@User('id') userId: number, @Query() query: MealStatisticsQueryDto) {
+    const statistics = await this.mealService.getStatistics(userId, query);
+
+    return {
+      statistics,
     };
   }
 }
