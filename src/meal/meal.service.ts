@@ -169,11 +169,4 @@ export class MealService {
       data,
     };
   }
-
-  constructResponseMeal(meal: Meal) {
-    const { userId: _userId, ...mealWithoutUserId } = meal;
-    return {
-      ...mealWithoutUserId,
-    };
-  }
 }

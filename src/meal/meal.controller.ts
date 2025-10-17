@@ -110,10 +110,8 @@ export class MealController {
   async createMeal(@User('id') userId: number, @Body() createMealDto: CreateMealDto) {
     const meal = await this.mealService.create(+userId, createMealDto);
 
-    const responseMeal = this.mealService.constructResponseMeal(meal);
-
     return {
-      meal: responseMeal,
+      meal,
     };
   }
 
@@ -164,10 +162,8 @@ export class MealController {
   ) {
     const meal = await this.mealService.update(+userId, +mealId, updateMealDto);
 
-    const responseMeal = this.mealService.constructResponseMeal(meal);
-
     return {
-      meal: responseMeal,
+      meal,
     };
   }
 
@@ -210,10 +206,8 @@ export class MealController {
   async deleteMeal(@User('id') userId: number, @Param('mealId') mealId: number) {
     const deletedMeal = await this.mealService.delete(+userId, +mealId);
 
-    const responseMeal = this.mealService.constructResponseMeal(deletedMeal);
-
     return {
-      meal: responseMeal,
+      meal: deletedMeal,
     };
   }
 
