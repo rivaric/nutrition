@@ -1,6 +1,7 @@
 import { DatabaseService } from '@app/database/database.service';
 import { UserService } from '@app/user/user.service';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Meal } from 'generated/prisma';
 
 import { CreateMealDto } from './dto/createMeal.dto';
 import { UpdateMealDto } from './dto/updateMeal.dto';
@@ -50,17 +51,10 @@ export class MealService {
       throw new HttpException('User not found', HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
-    const updatedMeal = await this.databaseService.meal.updateMany({
-      where: { id: mealId, userId },
+    const updatedMeal = await this.databaseService.meal.update({
+      where: { id: mealId },
       data: updateMealDto,
     });
-
-    if (updatedMeal.count === 0) {
-      throw new HttpException(
-        'Meal not found or does not belong to this user',
-        HttpStatus.FORBIDDEN,
-      );
-    }
 
     return updatedMeal;
   }
@@ -72,17 +66,17 @@ export class MealService {
       throw new HttpException('User not found', HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
-    const deletedMeal = await this.databaseService.meal.deleteMany({
-      where: { id: mealId, userId },
+    const deletedMeal = await this.databaseService.meal.delete({
+      where: { id: mealId },
     });
 
-    if (deletedMeal.count === 0) {
-      throw new HttpException(
-        'Meal not found or does not belong to this user',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
     return deletedMeal;
+  }
+
+  constructResponseMeal(meal: Meal) {
+    const { userId: _userId, ...mealWithoutUserId } = meal;
+    return {
+      ...mealWithoutUserId,
+    };
   }
 }

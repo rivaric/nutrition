@@ -4,17 +4,15 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@n
 import {
   ApiBearerAuth,
   ApiBody,
-  ApiForbiddenResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
-  ApiUnauthorizedResponse,
-  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 
 import { CreateMealDto } from './dto/createMeal.dto';
 import { UpdateMealDto } from './dto/updateMeal.dto';
+import { MealOwnershipGuard } from './guards/meal-ownership.guard';
 import { MealService } from './meal.service';
 
 @ApiTags('Meals')
@@ -41,7 +39,6 @@ export class MealController {
             type: 'object',
             properties: {
               id: { type: 'number', example: 1 },
-              userId: { type: 'number', example: 1 },
               name: { type: 'string', example: 'Grilled Chicken Salad' },
               mealType: { type: 'string', example: 'LUNCH' },
               calories: { type: 'number', example: 350.5 },
@@ -56,12 +53,6 @@ export class MealController {
         },
       },
     },
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Invalid or missing access token',
-  })
-  @ApiUnprocessableEntityResponse({
-    description: 'User not found',
   })
   async findAllByUser(@User('id') userId: number) {
     const meals = await this.mealService.findAllByUser(userId);
@@ -91,7 +82,6 @@ export class MealController {
           type: 'object',
           properties: {
             id: { type: 'number', example: 1 },
-            userId: { type: 'number', example: 1 },
             name: { type: 'string', example: 'Grilled Chicken Salad' },
             mealType: { type: 'string', example: 'LUNCH' },
             calories: { type: 'number', example: 350.5 },
@@ -106,22 +96,18 @@ export class MealController {
       },
     },
   })
-  @ApiUnauthorizedResponse({
-    description: 'Invalid or missing access token',
-  })
-  @ApiUnprocessableEntityResponse({
-    description: 'User not found',
-  })
   async createMeal(@User('id') userId: number, @Body() createMealDto: CreateMealDto) {
     const meal = await this.mealService.create(+userId, createMealDto);
 
+    const responseMeal = this.mealService.constructResponseMeal(meal);
+
     return {
-      meal,
+      meal: responseMeal,
     };
   }
 
   @Patch('me/:mealId')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(AccessTokenGuard, MealOwnershipGuard)
   @ApiOperation({
     summary: 'Update meal',
     description: 'Updates an existing meal belonging to the currently authenticated user',
@@ -145,20 +131,20 @@ export class MealController {
         meal: {
           type: 'object',
           properties: {
-            count: { type: 'number', example: 1 },
+            id: { type: 'number', example: 1 },
+            name: { type: 'string', example: 'Grilled Chicken Salad' },
+            mealType: { type: 'string', example: 'LUNCH' },
+            calories: { type: 'number', example: 350.5 },
+            protein: { type: 'number', example: 25.0 },
+            fat: { type: 'number', example: 12.5 },
+            carbs: { type: 'number', example: 15.0 },
+            description: { type: 'string', example: 'Healthy salad with grilled chicken breast' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
           },
         },
       },
     },
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Invalid or missing access token',
-  })
-  @ApiForbiddenResponse({
-    description: 'Meal not found or does not belong to this user',
-  })
-  @ApiUnprocessableEntityResponse({
-    description: 'User not found',
   })
   async updateMeal(
     @User('id') userId: number,
@@ -167,13 +153,15 @@ export class MealController {
   ) {
     const meal = await this.mealService.update(+userId, +mealId, updateMealDto);
 
+    const responseMeal = this.mealService.constructResponseMeal(meal);
+
     return {
-      meal,
+      meal: responseMeal,
     };
   }
 
   @Delete('me/:mealId')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(AccessTokenGuard, MealOwnershipGuard)
   @ApiOperation({
     summary: 'Delete meal',
     description: 'Deletes an existing meal belonging to the currently authenticated user',
@@ -193,26 +181,28 @@ export class MealController {
         meal: {
           type: 'object',
           properties: {
-            count: { type: 'number', example: 1 },
+            id: { type: 'number', example: 1 },
+            name: { type: 'string', example: 'Grilled Chicken Salad' },
+            mealType: { type: 'string', example: 'LUNCH' },
+            calories: { type: 'number', example: 350.5 },
+            protein: { type: 'number', example: 25.0 },
+            fat: { type: 'number', example: 12.5 },
+            carbs: { type: 'number', example: 15.0 },
+            description: { type: 'string', example: 'Healthy salad with grilled chicken breast' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
           },
         },
       },
     },
   })
-  @ApiUnauthorizedResponse({
-    description: 'Invalid or missing access token',
-  })
-  @ApiForbiddenResponse({
-    description: 'Meal not found or does not belong to this user',
-  })
-  @ApiUnprocessableEntityResponse({
-    description: 'User not found',
-  })
   async deleteMeal(@User('id') userId: number, @Param('mealId') mealId: number) {
-    const meal = await this.mealService.delete(+userId, +mealId);
+    const deletedMeal = await this.mealService.delete(+userId, +mealId);
+
+    const responseMeal = this.mealService.constructResponseMeal(deletedMeal);
 
     return {
-      meal,
+      meal: responseMeal,
     };
   }
 }
