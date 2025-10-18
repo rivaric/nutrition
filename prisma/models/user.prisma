@@ -1,0 +1,40 @@
+model User {
+    id       Int    @id @default(autoincrement())
+    name     String
+    email    String @unique
+    password String
+
+    refreshToken String?
+
+    age           Int?
+    gender        Gender?
+    heightCm      Float?
+    weightKg      Float?
+    targetWeight  Float?
+    activityLevel ActivityLevel?
+    goal          GoalType?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt @default(now())
+
+    meals      Meal[]
+}
+
+enum ActivityLevel {
+    SEDENTARY 
+    LIGHTLY_ACTIVE 
+    MODERATELY_ACTIVE 
+    VERY_ACTIVE
+}
+
+enum GoalType {
+    LOSE_WEIGHT
+    MAINTAIN_WEIGHT
+    GAIN_WEIGHT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+

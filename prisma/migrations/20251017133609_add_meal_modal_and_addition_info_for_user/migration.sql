@@ -1,0 +1,42 @@
+-- CreateEnum
+CREATE TYPE "MealType" AS ENUM ('BREAKFAST', 'LUNCH', 'DINNER', 'SNACK');
+
+-- CreateEnum
+CREATE TYPE "ActivityLevel" AS ENUM ('SEDENTARY', 'LIGHTLY_ACTIVE', 'MODERATELY_ACTIVE', 'VERY_ACTIVE');
+
+-- CreateEnum
+CREATE TYPE "GoalType" AS ENUM ('LOSE_WEIGHT', 'MAINTAIN_WEIGHT', 'GAIN_WEIGHT');
+
+-- CreateEnum
+CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE');
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "activityLevel" "ActivityLevel",
+ADD COLUMN     "age" INTEGER,
+ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "gender" "Gender",
+ADD COLUMN     "goal" "GoalType",
+ADD COLUMN     "heightCm" DOUBLE PRECISION,
+ADD COLUMN     "targetWeight" DOUBLE PRECISION,
+ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "weightKg" DOUBLE PRECISION;
+
+-- CreateTable
+CREATE TABLE "Meal" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "name" TEXT NOT NULL,
+    "mealType" "MealType" NOT NULL,
+    "calories" DOUBLE PRECISION NOT NULL,
+    "protein" DOUBLE PRECISION NOT NULL,
+    "fat" DOUBLE PRECISION NOT NULL,
+    "carbs" DOUBLE PRECISION NOT NULL,
+    "description" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Meal_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "Meal" ADD CONSTRAINT "Meal_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
