@@ -18,10 +18,6 @@ export class UserService {
       where: { email },
     });
 
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.UNPROCESSABLE_ENTITY);
-    }
-
     return user;
   }
 
