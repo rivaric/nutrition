@@ -1,0 +1,1 @@
+-- Empty migration: initial attempt to alter Dish before it was created.

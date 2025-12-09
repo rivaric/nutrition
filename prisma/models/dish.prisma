@@ -1,0 +1,27 @@
+model Dish {
+    id   Int    @id @default(autoincrement())
+    slug String
+    name String
+
+    calories Float
+    protein  Float
+    fat      Float
+    carbs    Float
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    meals MealDish[]
+}
+
+model MealDish {
+    id     Int  @id @default(autoincrement())
+    meal   Meal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+    mealId Int
+    dish   Dish @relation(fields: [dishId], references: [id], onDelete: Cascade)
+    dishId Int
+
+    createdAt DateTime @default(now())
+
+    @@unique([mealId, dishId])
+}

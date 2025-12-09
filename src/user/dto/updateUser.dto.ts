@@ -1,5 +1,5 @@
-import { IsEmail, IsOptional, IsString, IsInt, IsEnum, IsNumber, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export enum ActivityLevel {
   SEDENTARY = 'SEDENTARY',

@@ -3,12 +3,15 @@ model Meal {
     user   User @relation(fields: [userId], references: [id])
     userId Int
 
+    dishes MealDish[]
+
     name        String
     mealType    MealType
     calories    Float
     protein     Float
     fat         Float
     carbs       Float
+    weight      Float?
     description String?
 
     createdAt DateTime @default(now())
