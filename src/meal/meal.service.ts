@@ -31,6 +31,13 @@ export class MealService {
 
     const meals = await this.databaseService.meal.findMany({
       where: { userId },
+      include: {
+        dishes: {
+          include: {
+            dish: true,
+          },
+        },
+      },
     });
 
     return meals;
@@ -43,14 +50,116 @@ export class MealService {
       throw new HttpException('User not found', HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
+    const { dishes, ...mealData } = createMealDto;
+
+    const nutrition =
+      dishes && dishes.length > 0
+        ? await this.calculateNutritionFromDishes(dishes)
+        : this.validateAndGetNutrition(mealData);
+
     const meal = await this.databaseService.meal.create({
       data: {
-        ...createMealDto,
+        ...mealData,
+        ...nutrition,
         userId,
+        dishes:
+          dishes && dishes.length > 0
+            ? {
+                create: dishes.map((item) => ({
+                  dishId: item.dishId,
+                })),
+              }
+            : undefined,
+      },
+      include: {
+        dishes: {
+          include: {
+            dish: true,
+          },
+        },
       },
     });
 
     return meal;
+  }
+
+  private async calculateNutritionFromDishes(
+    dishInputs: { dishId: number; weight: number }[],
+  ): Promise<{ calories: number; protein: number; fat: number; carbs: number; weight: number }> {
+    const dishIds = dishInputs.map((d) => d.dishId);
+    const dishes = await this.databaseService.dish.findMany({
+      where: {
+        id: {
+          in: dishIds,
+        },
+      },
+    });
+
+    if (dishes.length !== dishIds.length) {
+      throw new HttpException('One or more dishes not found', HttpStatus.BAD_REQUEST);
+    }
+
+    const dishById = new Map(dishes.map((d) => [d.id, d]));
+
+    const aggregate = dishInputs.reduce(
+      (acc, input) => {
+        const dish = dishById.get(input.dishId);
+        if (!dish) return acc;
+
+        const factor = input.weight / 100;
+
+        return {
+          calories: acc.calories + dish.calories * factor,
+          protein: acc.protein + dish.protein * factor,
+          fat: acc.fat + dish.fat * factor,
+          carbs: acc.carbs + dish.carbs * factor,
+          weight: acc.weight + input.weight,
+        };
+      },
+      {
+        calories: 0,
+        protein: 0,
+        fat: 0,
+        carbs: 0,
+        weight: 0,
+      },
+    );
+
+    return {
+      calories: +aggregate.calories.toFixed(1),
+      protein: +aggregate.protein.toFixed(1),
+      fat: +aggregate.fat.toFixed(1),
+      carbs: +aggregate.carbs.toFixed(1),
+      weight: aggregate.weight,
+    };
+  }
+
+  private validateAndGetNutrition(mealData: Omit<CreateMealDto, 'dishes'>): {
+    calories: number;
+    protein: number;
+    fat: number;
+    carbs: number;
+    weight?: number;
+  } {
+    if (
+      mealData.calories === undefined ||
+      mealData.protein === undefined ||
+      mealData.fat === undefined ||
+      mealData.carbs === undefined
+    ) {
+      throw new HttpException(
+        'Either dishIds or КБЖУ (calories, protein, fat, carbs) must be provided',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return {
+      calories: mealData.calories,
+      protein: mealData.protein,
+      fat: mealData.fat,
+      carbs: mealData.carbs,
+      weight: mealData.weight,
+    };
   }
 
   async update(userId: number, mealId: number, updateMealDto: UpdateMealDto) {

@@ -67,6 +67,17 @@ export class UpdateMealDto {
   carbs?: number;
 
   @ApiProperty({
+    description: 'Meal weight in grams',
+    example: 320,
+    minimum: 0,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  weight?: number;
+
+  @ApiProperty({
     description: 'Optional meal description',
     example: 'Healthy salad with grilled chicken breast',
     required: false,
