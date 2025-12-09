@@ -1,98 +1,112 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+## Nutrition API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend для трекинга питания и приёмов пищи:
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+- NestJS + Prisma + PostgreSQL  
+- Kafka + отдельный Python‑сервис (`Food_Detection`) для распознавания блюд по фото  
+- Автоматический расчёт КБЖУ при создании приёма пищи на основе блюд и их веса
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Запуск через Docker Compose
 
-## Project setup
+Требования:
+
+- Docker / Docker Desktop
+- Docker Compose
+
+### 0. Подготовка сервиса распознавания блюд
+
+В корне проекта (там же, где лежит `docker-compose.yml`) нужно склонировать репозиторий с сервисом детекции еды:
 
 ```bash
-$ pnpm install
+git clone https://github.com/daniil-karpov-1996/Food_Detection.git
+mv Food_Detection food_detection
 ```
 
-## Compile and run the project
+В результате должна появиться папка `food_detection` рядом с `docker-compose.yml`, т.к. `docker-compose` использует её как build‑контекст для контейнера `food_detector`.
+
+### 1. Переменные окружения
+
+Создай файл `.env` в корне проекта (рядом с `docker-compose.yml`), пример:
+
+```env
+POSTGRES_USER=nutrition
+POSTGRES_PASSWORD=nutrition
+POSTGRES_DB=nutrition
+
+DATABASE_URL=postgresql://nutrition:nutrition@postgres:5432/nutrition?schema=public
+
+KAFKA_BROKERS=kafka:29092
+KAFKA_IMAGE_RECOGNITION_TOPIC=food_images
+KAFKA_IMAGE_RECOGNITION_RESPONSE_TOPIC=food_cls
+KAFKA_IMAGE_RECOGNITION_CONSUMER_GROUP=nutrition-image-recognition
+
+JWT_ACCESS_SECRET=access-secret
+JWT_REFRESH_SECRET=refresh-secret
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+```
+
+> Важно: внутри docker‑сети Postgres и Kafka доступны как `postgres` и `kafka`, а не `localhost`.
+
+### 2. Собрать и поднять весь стек
+
+Из корня проекта:
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+docker compose up --build
 ```
 
-## Run tests
+Будут подняты:
+
+- `postgres` — база данных
+- `zookeeper` + `kafka` — брокер сообщений
+- `food_detector` — Python‑сервис с YOLO, слушает Kafka и классифицирует блюда
+- `backend` — NestJS‑приложение
+
+После старта:
+
+- Backend: `http://localhost:3000`
+- Swagger UI: `http://localhost:3000/docs`
+
+### 3. Применить миграции и сиды (если нужно руками)
+
+Если запускаешь backend локально (не в контейнере) и хочешь прогнать миграции/сиды:
 
 ```bash
-# unit tests
-$ pnpm run test
+pnpm install
 
-# e2e tests
-$ pnpm run test:e2e
+npx prisma migrate dev
+pnpm prisma db seed
 
-# test coverage
-$ pnpm run test:cov
+pnpm run start:dev
 ```
 
-## Deployment
+При запуске всего через `docker compose up --build` Prisma‑миграции и сиды тоже можно выполнять из контейнера backend’а, если потребуется.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+---
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Локальная разработка без Docker
+
+1. Поднять Postgres (например, через локальный Docker контейнер) и выставить `DATABASE_URL`.
+2. Установить зависимости:
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+pnpm install
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+3. Применить миграции и сиды:
 
-## Resources
+```bash
+npx prisma migrate dev
+pnpm prisma db seed
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+4. Запустить backend:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+pnpm run start:dev
+```
 
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Kafka и `food_detector` в этом случае можно поднять отдельно или временно отключить функциональность распознавания.*** End Patch***"}]}/>
