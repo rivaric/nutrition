@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE "Dish"
+    ALTER COLUMN "image" SET NOT NULL,
+    ALTER COLUMN "calories" SET NOT NULL,
+    ALTER COLUMN "protein" SET NOT NULL,
+    ALTER COLUMN "fat" SET NOT NULL,
+    ALTER COLUMN "carbs" SET NOT NULL;
+
+
